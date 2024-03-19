@@ -28,3 +28,20 @@ pub fn post_graphql_blocking<Q: GraphQLQuery, U: reqwest::IntoUrl>(
 
     reqwest_response.json()
 }
+
+/// Use the provided reqwest::Client to post a GraphQL request.
+pub fn try_post_graphql_blocking<Q: GraphQLQuery, U: reqwest::IntoUrl>(
+    client: &reqwest::blocking::Client,
+    url: U,
+    variables: Q::Variables,
+) -> Result<reqwest::blocking::Response, reqwest::Error> {
+    let body = Q::build_query(variables);
+    client.post(url).json(&body).send()
+}
+
+/// parse reqwest::blocking::Response into Result<crate::Response<Q::ResponseData>, reqwest::Error>
+pub fn try_parse_response<Q: GraphQLQuery>(
+    response: reqwest::blocking::Response,
+) -> Result<crate::Response<Q::ResponseData>, reqwest::Error> {
+    response.json::<crate::Response<Q::ResponseData>>()
+}

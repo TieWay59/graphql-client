@@ -1,3 +1,5 @@
+use std::sync::mpsc::TryRecvError;
+
 use ::reqwest::blocking::Client;
 use anyhow::*;
 use clap::Parser;
@@ -59,8 +61,26 @@ fn main() -> Result<(), anyhow::Error> {
         )
         .build()?;
 
-    let response_body =
-        post_graphql::<RepoView, _>(&client, "https://api.github.com/graphql", variables).unwrap();
+    // old examples:
+    //
+    // let response_body =
+    //     post_graphql::<RepoView, _>(&client, "https://api.github.com/graphql", variables).unwrap();
+    //
+    // new one:
+    //
+
+    let try_response = graphql_client::reqwest::try_post_graphql_blocking::<RepoView, _>(
+        &client,
+        "https://api.github.com/graphql",
+        variables,
+    )?;
+
+    dbg!(try_response.headers());
+    dbg!(try_response.status());
+
+    // try_response.text()?; <- this is consuming the response, so we can't use it anymore
+
+    let response_body = graphql_client::reqwest::try_parse_response::<RepoView>(try_response)?;
 
     info!("{:?}", response_body);
 
